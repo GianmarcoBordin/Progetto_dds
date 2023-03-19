@@ -9,7 +9,7 @@ import json
 import struct
 import logging
 
-SERVER_ID = "192.168.1.40"
+SERVER_ID = "192.168.1.9"
 SERVER_PORT = 5000
 
 RCV_BUFFER_SIZE = 1024
@@ -35,6 +35,7 @@ class Process:
         # It starts a connection to the server to obtain a port number
         print("-----CONNECTING TO SERVER...-----")
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.connect((SERVER_ID, SERVER_PORT))
             mess = bytes("Hello", "utf-8")
             s.sendall(mess)
@@ -44,6 +45,9 @@ class Process:
         port = 5000 + int(data)
         print("-----CONNECTION TO SERVER SUCCESSFULLY CREATED-----")
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            #sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER,
+            #            struct.pack('ii', 1, 0))
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             sock.connect((SERVER_ID, port))
             mess = bytes("Hello", "utf-8")
             sock.sendall(mess)
@@ -82,12 +86,12 @@ class Process:
         t.start()
 
     def creation_links(self):
-        # hostname = socket.gethostname()
-        # IPAddr = socket.gethostbyname(hostname)
+        hostname = socket.gethostname()
+        IPAddr = socket.gethostbyname(hostname)
 
-        # self.selfip = IPAddr
+        self.selfip = IPAddr
 
-        self.selfip = "192.168.1.32"  # TODO remove
+        #self.selfip = "192.168.1.115"  # TODO remove
 
         self.selfid = self.ids[self.ips.index(self.selfip)]
         for i in range(0, len(self.ids)):
@@ -99,10 +103,9 @@ class Process:
             self.AL[i].receiver()
 
     def __thread(self):
-        logging.debug("PROCESS:Number of faulty processes is: %s", str(self.faulty))
+        logging.info("PROCESS:Number of faulty processes is: %s", str(self.faulty))
         while True:
             for msg in self.currentMSG:
-                logging.debug("PROCESS:Msg in currentMSG: %s", msg)
                 counter_echos = 0
                 counter_readys = 0
 
@@ -113,10 +116,6 @@ class Process:
                     if i == msg:
                         counter_readys += 1
 
-                logging.debug("PROCESS:Counter echos: %d", counter_echos)
-                logging.debug("(N+f)/2 = %d", (len(self.ids) + self.faulty) / 2)
-                logging.debug("ECHOS = %s", self.echos.values())
-
                 if (
                     counter_echos > (len(self.ids) + self.faulty) / 2
                 ) and self.sentready is False:
@@ -125,7 +124,9 @@ class Process:
                     logging.info("PROCESS:------ Starting ready part ------ ")
                     # Broadcast to all a ready message
                     for i in range(len(self.ids)):
-                        self.currentMSG.append(msg)
+                        if msg not in self.currentMSG:
+                            self.currentMSG.append(msg)
+
                         self.AL[i].send(msg, flag="READY")
 
                 if counter_readys > self.faulty and self.sentready is False:
@@ -134,12 +135,15 @@ class Process:
                     # Broadcast to all a ready message
                     for i in range(len(self.ids)):
                         self.currentMSG.append(msg)
+                        if msg not in self.currentMSG:
+                            self.currentMSG.append(msg)
+
                         self.AL[i].send(msg, flag="READY")
 
                 if counter_readys > 2 * self.faulty and self.delivered is False:
                     self.delivered = True
 
-                    logging.debug("PROCESS: %d,%s", self.selfid, self.selfip)
+                    logging.info("PROCESS: %d,%s", self.selfid, self.selfip)
 
                     print("-----MESSAGE DELIVERED:", msg)
 
@@ -158,7 +162,7 @@ class Process:
             # Get the queue length (number of not consumed messages)
             num = response.method.message_count
 
-            logging.debug(
+            logging.info(
                 "PROCESS: %d,%s --- My queue length: %d", self.selfid, self.selfip, num
             )
 
@@ -168,8 +172,8 @@ class Process:
 
             self.counter = 0
 
-            def callback(body):
-                # logging.debug("PROCESS: [x] Received %r", body)
+            def callback(ch, method, properties, body):
+                logging.info("PROCESS: [x] Received %r", body)
                 queue_msg = body.decode("utf-8")
                 temp = queue_msg.split("#")
                 ip_from_queue = temp[0]
@@ -199,7 +203,8 @@ class Process:
             )
             self.AL[j].receiver()
         for i in range(len(self.ids)):
-            self.currentMSG.append(message)
+            if message not in self.currentMSG:
+                self.currentMSG.append(message)
             self.AL[i].send(message, flag="SEND")
 
     def deliver_send(self, msg, flag, idn):
@@ -210,7 +215,7 @@ class Process:
                 self.currentMSG.append(msg)
             self.sentecho = True
 
-            logging.debug(
+            logging.info(
                 "PROCESS: %d,%s --- Starting the ECHO part...", self.selfid, self.selfip
             )
 
@@ -219,21 +224,21 @@ class Process:
                 self.AL[i].send(msg, flag="ECHO")
 
     def deliver_echo(self, msg, flag, idn):
-        logging.debug("PROCESS: Msg: %s, flag: %s, id: %d", msg, flag, idn)
-        logging.debug("PROCESS: CURRENTMSG %s", self.currentMSG)
+        logging.info("PROCESS: Msg: %s, flag: %s, id: %d", msg, flag, idn)
+        logging.info("PROCESS: CURRENTMSG %s", self.currentMSG)
         if flag == "ECHO" and idn not in self.echos:
             if msg not in self.currentMSG:
                 self.currentMSG.append(msg)
             self.echos[idn] = msg
 
-            logging.debug("PROCESS: --------ECHOS VALUE: %s:", self.echos)
+            logging.info("PROCESS: --------ECHOS VALUE: %s:", self.echos)
 
     def deliver_ready(self, msg, flag, idn):
-        logging.debug("PROCESS: Msg: %s, flag: %s, id: %d", msg, flag, idn)
-        logging.debug("PROCESS: CURRENTMSG %s", self.currentMSG)
+        logging.info("PROCESS: Msg: %s, flag: %s, id: %d", msg, flag, idn)
+        logging.info("PROCESS: CURRENTMSG %s", self.currentMSG)
         if flag == "READY" and idn not in self.readys:
             if msg not in self.currentMSG:
                 self.currentMSG.append(msg)
             self.readys[idn] = msg
 
-            logging.debug("PROCESS: --------READYS VALUE: %s:", self.readys)
+            logging.info("PROCESS: --------READYS VALUE: %s:", self.readys)
