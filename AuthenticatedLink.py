@@ -45,8 +45,6 @@ class AuthenticatedLink:
         logging.info("AUTH:Port used for receiving: %d", port)
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as self.s:
-            #self.s.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER,
-             #            struct.pack('ii', 1, 0))
             self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.s.bind((host, port))
             self.s.listen(0)
@@ -138,8 +136,6 @@ class AuthenticatedLink:
         )
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as self.sock:
-            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER,
-                         struct.pack('ii', 1, 0))
             self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.sock.connect((self.ip, port))
 
@@ -170,8 +166,8 @@ class AuthenticatedLink:
             logging.info("--- Authenticity check failed for %s", message)
             # TODO what do if authenticity check fails??
 
-        time.sleep(0.1)  # TODO check the value and fix
-        #t.join()
+        #time.sleep(0.1)  # TODO check the value and fix
+        t.join()
 
         self.receiver()
         if flag == "SEND":

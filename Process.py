@@ -9,7 +9,7 @@ import json
 import struct
 import logging
 
-SERVER_ID = "192.168.1.9"
+SERVER_ID = "192.168.1.30"
 SERVER_PORT = 5000
 
 RCV_BUFFER_SIZE = 1024
@@ -181,6 +181,12 @@ class Process:
                 if ip_from_queue not in self.ips:
                     self.ips.append(ip_from_queue)
                     self.ids.append(int(id_from_queue))
+                    self.AL.append(
+                        AuthenticatedLink.AuthenticatedLink(
+                            self.selfid, self.selfip, self.ids[len(self.ids) - 1], self.ips[len(self.ips) - 1], self
+                        )
+                    )
+                    self.AL[len(self.AL) - 1].receiver()
                 self.counter += 1
                 if self.counter == num:
                     channel.stop_consuming()
