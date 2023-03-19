@@ -28,7 +28,7 @@ class TCP_SERVER:
         # Bind the socket to the port
         #self.IP = socket.gethostbyname('localhost')
 
-        self.IP = '192.168.1.9'
+        self.IP = '192.168.1.30'
         server_address = (self.IP, self.PORT)
         # print(sys.stderr, ' SERVER: starting up on %s port %s' % server_address)
         logging.info(' SERVER: starting up on %s port %s' % server_address)
@@ -83,9 +83,6 @@ class TCP_SERVER:
 
         # Create a TCP/IP socket
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            #sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER,
-            #             struct.pack('ii', 1, 0))
-
             # Bind the socket to the port
             server_address = (self.IP, self.PORT + t)
 
