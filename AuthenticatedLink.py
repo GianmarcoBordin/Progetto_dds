@@ -1,3 +1,4 @@
+import random
 import socket
 import hashlib
 import hmac
@@ -5,6 +6,8 @@ import json
 import logging
 from threading import Thread
 import threading
+import time
+import struct
 
 from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
 
@@ -35,7 +38,7 @@ class AuthenticatedLink:
         port = (
             int("50" + str(self.id) + str(self.self_id))
             if self.self_id < 10 and self.id < 10
-            else int("5" + str(self.id) + str(self.self_id))
+            else int("50" + str(self.id) + str(self.self_id))
         )
         print(port)
 
@@ -56,6 +59,12 @@ class AuthenticatedLink:
 
                     parsed_data = json.loads(data.decode())
 
+                    logging.info(
+                        "AUTH: <%s, %d> -- sent this data %s",
+                        self.ip,
+                        self.id,
+                        parsed_data,
+                    )
                     if "MSG" not in parsed_data.keys():
                         self.__add_key(parsed_data)
                         conn.sendall(b"synACK")
@@ -66,7 +75,7 @@ class AuthenticatedLink:
                         )
                         t.start()
 
-                    logging.info("AUTH:Received DATA <%s> from <%s,%d>", data, self.ip, self.id)
+                    logging.info("AUTH:Received DATA: %s", data)
 
             logging.info(
                 "AUTH:------- SOCKET CLOSED, ME: %s,TO: %s", self.self_ip, self.ip
@@ -119,7 +128,7 @@ class AuthenticatedLink:
         port = (
             int("50"+str(self.self_id) + str(self.id))
             if self.self_id < 10 and self.id < 10
-            else int("5" +str(self.self_id) + str(self.id))
+            else int("50" +str(self.self_id) + str(self.id))
         )
 
         logging.info(
@@ -139,6 +148,8 @@ class AuthenticatedLink:
 
     # It checks message authenticity comparing the hmac
     def __check_auth(self, message, attached_mac, flag):
+        print(self.key.get(self.id, "Key not found"))
+        assert isinstance(self.key.get(self.id, "Key not found"),bytes)
         temp_hash = hmac.new(
             self.key.get(self.id, "Key not found"),
             (flag + message).encode("utf-8"),
@@ -155,6 +166,7 @@ class AuthenticatedLink:
             logging.info("--- Authenticity check failed for %s", message)
             # TODO what do if authenticity check fails??
 
+        #time.sleep(0.1)  # TODO check the value and fix
         t.join()
 
         self.receiver()
