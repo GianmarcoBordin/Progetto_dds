@@ -9,7 +9,7 @@ import json
 import struct
 import logging
 
-SERVER_ID = "192.168.1.30"
+SERVER_ID = "192.168.1.40"
 SERVER_PORT = 5000
 
 RCV_BUFFER_SIZE = 1024
@@ -45,8 +45,6 @@ class Process:
         port = 5000 + int(data)
         print("-----CONNECTION TO SERVER SUCCESSFULLY CREATED-----")
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            #sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER,
-            #            struct.pack('ii', 1, 0))
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             sock.connect((SERVER_ID, port))
             mess = bytes("Hello", "utf-8")
@@ -91,7 +89,7 @@ class Process:
 
         self.selfip = IPAddr
 
-        #self.selfip = "192.168.1.115"  # TODO remove
+        #self.selfip = "192.168.1.x"  # Used if ip address is not not coherent with others
 
         self.selfid = self.ids[self.ips.index(self.selfip)]
         for i in range(0, len(self.ids)):
@@ -181,12 +179,8 @@ class Process:
                 if ip_from_queue not in self.ips:
                     self.ips.append(ip_from_queue)
                     self.ids.append(int(id_from_queue))
-                    self.AL.append(
-                        AuthenticatedLink.AuthenticatedLink(
-                            self.selfid, self.selfip, self.ids[len(self.ids) - 1], self.ips[len(self.ips) - 1], self
-                        )
-                    )
-                    self.AL[len(self.AL) - 1].receiver()
+                    #self.AL.append(AuthenticatedLink.AuthenticatedLink(self.selfid, self.selfip, self.ids[len(self.ids) - 1], self.ips[len(self.ips) - 1], self))
+                    #self.AL[len(self.AL) - 1].receiver()
                 self.counter += 1
                 if self.counter == num:
                     channel.stop_consuming()
