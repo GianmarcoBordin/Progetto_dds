@@ -3,13 +3,14 @@ import math
 import pika as pika
 import AuthenticatedLink
 import socket
+import threading
 from threading import Thread
 import time
 import json
 import struct
 import logging
 
-SERVER_ID = "192.168.1.30"
+SERVER_ID = "192.168.1.40"
 SERVER_PORT = 5000
 
 RCV_BUFFER_SIZE = 1024
@@ -87,11 +88,12 @@ class Process:
         hostname = socket.gethostname()
         IPAddr = socket.gethostbyname(hostname)
 
-        #self.selfip = IPAddr
+        # self.selfip = IPAddr
 
-        self.selfip = "192.168.1.89"  # TODO remove
+        self.selfip = "192.168.1.42"  # TODO remove
 
         self.selfid = self.ids[self.ips.index(self.selfip)]
+        self.barrier = threading.Barrier(parties=2)
         for i in range(0, len(self.ids)):
             self.AL.append(
                 AuthenticatedLink.AuthenticatedLink(
@@ -144,6 +146,7 @@ class Process:
                     logging.info("PROCESS: %d,%s", self.selfid, self.selfip)
 
                     print("-----MESSAGE DELIVERED:", msg)
+                    return
 
             # Not to destroy performance
             time.sleep(BREAK_TIME)
@@ -181,7 +184,11 @@ class Process:
                     self.ids.append(int(id_from_queue))
                     self.AL.append(
                         AuthenticatedLink.AuthenticatedLink(
-                            self.selfid, self.selfip, self.ids[len(self.ids) - 1], self.ips[len(self.ips) - 1], self
+                            self.selfid,
+                            self.selfip,
+                            self.ids[len(self.ids) - 1],
+                            self.ips[len(self.ips) - 1],
+                            self,
                         )
                     )
                     self.AL[len(self.AL) - 1].receiver()
@@ -210,10 +217,14 @@ class Process:
             if message not in self.currentMSG:
                 self.currentMSG.append(message)
             self.AL[i].send(message, flag="SEND")
+        self.barrier.wait()
 
     def deliver_send(self, msg, flag, idn):
         # id == 1 checks that the delivery is computed with the sender s that by convention it's the first
         if flag == "SEND" and idn == 1 and self.sentecho is False:
+            if self.selfip == 1:
+                self.barrier.wait()
+
             # Add the message if it's not yet received
             if msg not in self.currentMSG:
                 self.currentMSG.append(msg)

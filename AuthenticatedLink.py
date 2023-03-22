@@ -54,7 +54,9 @@ class AuthenticatedLink:
                 logging.info("AUTH:Connected by %s", addr)
                 while True:
                     data = conn.recv(RCV_BUFFER_SIZE)
+
                     if not data:
+                        print("Closing thread:", threading.current_thread())
                         break
 
                     parsed_data = json.loads(data.decode())
@@ -126,9 +128,9 @@ class AuthenticatedLink:
     def send(self, message, flag):
         # It uses ternary operator
         port = (
-            int("50"+str(self.self_id) + str(self.id))
+            int("50" + str(self.self_id) + str(self.id))
             if self.self_id < 10 and self.id < 10
-            else int("50" +str(self.self_id) + str(self.id))
+            else int("50" + str(self.self_id) + str(self.id))
         )
 
         logging.info(
@@ -148,8 +150,6 @@ class AuthenticatedLink:
 
     # It checks message authenticity comparing the hmac
     def __check_auth(self, message, attached_mac, flag):
-        print(self.key.get(self.id, "Key not found"))
-        assert isinstance(self.key.get(self.id, "Key not found"),bytes)
         temp_hash = hmac.new(
             self.key.get(self.id, "Key not found"),
             (flag + message).encode("utf-8"),
@@ -166,10 +166,11 @@ class AuthenticatedLink:
             logging.info("--- Authenticity check failed for %s", message)
             # TODO what do if authenticity check fails??
 
-        #time.sleep(0.1)  # TODO check the value and fix
-        t.join()
+        # time.sleep(0.1)  # TODO check the value and fix
+        if flag != "READY":
+            t.join()
+            self.receiver()
 
-        self.receiver()
         if flag == "SEND":
             self.proc.deliver_send(msg, flag, self.id)
         elif flag == "ECHO":
