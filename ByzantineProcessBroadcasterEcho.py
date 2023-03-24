@@ -1,8 +1,11 @@
 import Process
 import AuthenticatedLink
 
-class ByzantineProcessBroadcasterEcho (Process):
-    pass
+
+class ByzantineProcessBroadcasterEcho (Process.Process):
+
+    def __update(self):
+        super().update()
 
     def broadcast(self, message):
         self.__update()

@@ -4,10 +4,11 @@ import struct
 import json
 import pika
 
-SERVER_ID = "192.168.1.40"
+SERVER_ID = "192.168.1.30"
 SERVER_PORT = 5000
 
 RCV_BUFFER_SIZE = 1024
+
 
 class ByzantineProcessSilent:
     def __init__(self):

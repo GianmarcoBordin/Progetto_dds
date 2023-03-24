@@ -10,7 +10,7 @@ import json
 import struct
 import logging
 
-SERVER_ID = "192.168.1.40"
+SERVER_ID = "192.168.1.30"
 SERVER_PORT = 5000
 
 RCV_BUFFER_SIZE = 1024
@@ -88,9 +88,9 @@ class Process:
         hostname = socket.gethostname()
         IPAddr = socket.gethostbyname(hostname)
 
-        # self.selfip = IPAddr
+        self.selfip = IPAddr
 
-        self.selfip = "192.168.1.42"  # TODO remove
+        # self.selfip = "192.168.1.x"  # TODO remove
 
         self.selfid = self.ids[self.ips.index(self.selfip)]
         self.barrier = threading.Barrier(parties=2)
@@ -153,7 +153,7 @@ class Process:
 
     # Before starting broadcast, a process reads the ip addresses and ids of
     # the other processes from its queue
-    def __update(self):
+    def update(self):
         with pika.BlockingConnection(
             pika.ConnectionParameters(host=SERVER_ID)
         ) as connection:
@@ -205,7 +205,7 @@ class Process:
     # The message is sent using authenticated link abstractions, it's a string with a flag indicating
     # the type (SEND,ECHO,READY)
     def broadcast(self, message):
-        self.__update()
+        self.update()
         for j in range(len(self.AL), len(self.ids)):
             self.AL.append(
                 AuthenticatedLink.AuthenticatedLink(
@@ -222,19 +222,19 @@ class Process:
     def deliver_send(self, msg, flag, idn):
         # id == 1 checks that the delivery is computed with the sender s that by convention it's the first
         if flag == "SEND" and idn == 1 and self.sentecho is False:
-            if self.selfip == 1:
-                self.barrier.wait()
-
             # Add the message if it's not yet received
             if msg not in self.currentMSG:
                 self.currentMSG.append(msg)
             self.sentecho = True
+            if self.selfid == 1:
+                self.barrier.wait()
+            else:
+                self.update()  # If writer_id == 1 then it is correct, otherwise no
 
             logging.info(
                 "PROCESS: %d,%s --- Starting the ECHO part...", self.selfid, self.selfip
             )
 
-            self.__update()  # If writer_id == 1 then it is correct, otherwise no
             for i in range(len(self.ids)):
                 self.AL[i].send(msg, flag="ECHO")
 

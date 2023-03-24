@@ -5,11 +5,13 @@ import random
 
 BREAK_TIME = 0.1
 
-class ByzantineProcessBroadcasterReady (Process):
-    pass
 
+class ByzantineProcessBroadcasterReady (Process.Process):
     # This byzantine process does not terminate because it does not keep track of received messages,
     # but it sends a specific message to a random process
+
+    def __update(self):
+        super().update()
 
     def __thread(self):
         selected = random.randint(0, len(self.ids) // 2 - 1)
@@ -56,7 +58,7 @@ class ByzantineProcessBroadcasterReady (Process):
                 self.AL[i].send(msg, flag="ECHO")
 
             for i in range(len(self.ids) // 2, len(self.ids) - 1):
-                self.AL[i].send("OtherByzantine", flag="ECHO") # TODO check if this message is not too long
+                self.AL[i].send("OtherByzantine", flag="ECHO")   # TODO check if this message is not too long
 
             # Only one process receives Byzantine message
             # while the others will receive another Byzantine message
