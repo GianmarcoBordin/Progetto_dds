@@ -27,3 +27,5 @@ Ngrok tunnel
 1)Start the tunnel on localhost port XXXX on the ngrok command prompt
 
 	ngrok tcp XXXX
+
+Nel commit del 24/03/2023 riguardante l'implementazione dei processi bizantini sono stati cambiati anche il main, per renderlo più comodo da eseguire, e il process, poichè la funzione __update, privata, non poteva essere chiamata dalle classi figlie.
