@@ -29,3 +29,5 @@ Ngrok tunnel
 	ngrok tcp XXXX
 
 Nel commit del 24/03/2023 riguardante l'implementazione dei processi bizantini sono stati cambiati anche il main, per renderlo più comodo da eseguire, e il process, poichè la funzione __update, privata, non poteva essere chiamata dalle classi figlie.
+
+Nel commit del 29/03/2023 nella classe Process.py è stata modificato il luogo dove si calcolano i processi bizantini: invece che calcolarli nell'__init__ (momento in cui non si conoscono tutti gli altri processi), li si calcola all'interno del broadcast dopo l'update per il broadcaster e nella deliver_send dopo l'update per i receivers.
