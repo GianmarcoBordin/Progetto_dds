@@ -30,7 +30,7 @@ class Process:
         self.delivered = False
         self.echos = {}
         self.readys = {}
-        self.faulty = math.floor(len(self.ids) / 3)
+        self.faulty = 0
 
     def connection_to_server(self):
         # It starts a connection to the server to obtain a port number
@@ -213,6 +213,7 @@ class Process:
                 )
             )
             self.AL[j].receiver()
+        self.faulty = math.floor(len(self.ids) / 3)
         for i in range(len(self.ids)):
             if message not in self.currentMSG:
                 self.currentMSG.append(message)
@@ -230,6 +231,7 @@ class Process:
                 self.barrier.wait()
             else:
                 self.update()  # If writer_id == 1 then it is correct, otherwise no
+                self.faulty = math.floor(len(self.ids) / 3)
 
             logging.info(
                 "PROCESS: %d,%s --- Starting the ECHO part...", self.selfid, self.selfip
